@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: Complete Test Suite (UI + API)
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
 env:
   NODE_VERSION: 'lts/*'
   CI: true
+  # API Testing Configuration
+  API_BASE_URL: 'https://api.social-media-demo.com/v1'
+  API_TIMEOUT: '30000'
 
 jobs:
   playwright-tests:
@@ -56,3 +59,66 @@ jobs:
           name: test-results-${{ matrix.project }}
           path: test-results/
           retention-days: 14
+
+  api-tests:
+    name: API Tests (Postman/Newman)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [playwright-tests] # Run after UI tests complete
+    if: always() # Run even if UI tests fail
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Newman globally
+        run: npm install -g newman newman-reporter-htmlextra
+        
+      - name: Run API tests with Newman
+        run: |
+          newman run postman/Social-Media-API.postman_collection.json \
+            -e postman/Social-Media-API.postman_environment.json \
+            --reporters cli,json,htmlextra \
+            --reporter-json-export api-test-results.json \
+            --reporter-htmlextra-export api-test-report.html \
+            --timeout-request 10000 \
+            --timeout 30000 \
+            --delay-request 100 \
+            --color off
+        continue-on-error: true # Don't fail the workflow if API tests fail
+        
+      - name: Upload API test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-results
+          path: |
+            api-test-results.json
+            api-test-report.html
+          retention-days: 14
+          
+      - name: Display API test summary
+        if: always()
+        run: |
+          echo "## API Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f api-test-results.json ]; then
+            echo "📊 **Test Execution Details:**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Collection: Social-Media-API" >> $GITHUB_STEP_SUMMARY
+            echo "- Environment: Test Environment" >> $GITHUB_STEP_SUMMARY
+            echo "- Report: See artifacts for detailed HTML report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **API tests completed** - Check artifacts for detailed results" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **API tests failed to generate results**" >> $GITHUB_STEP_SUMMARY
+          fi

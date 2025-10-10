@@ -1,0 +1,215 @@
+name: API Tests Only
+
+on:
+  push:
+    paths:
+      - 'postman/**'
+  pull_request:
+    paths:
+      - 'postman/**'
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'API Base URL'
+        required: false
+        default: 'https://api.social-media-demo.com/v1'
+      timeout:
+        description: 'Request timeout (ms)'
+        required: false
+        default: '10000'
+
+env:
+  NODE_VERSION: 'lts/*'
+  CI: true
+
+jobs:
+  api-tests:
+    name: Postman API Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install Newman and reporters
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+          npm install -g newman-reporter-html
+        
+      - name: Validate Postman files
+        run: |
+          echo "Validating Postman collection and environment..."
+          if [ ! -f "postman/Social-Media-API.postman_collection.json" ]; then
+            echo "❌ Collection file not found!"
+            exit 1
+          fi
+          if [ ! -f "postman/Social-Media-API.postman_environment.json" ]; then
+            echo "❌ Environment file not found!"
+            exit 1
+          fi
+          echo "✅ Postman files validated"
+        
+      - name: Set API Base URL
+        run: |
+          API_URL="${{ github.event.inputs.api_base_url || 'https://api.social-media-demo.com/v1' }}"
+          echo "Using API Base URL: $API_URL"
+          # Update environment file with the provided or default URL
+          sed -i 's|"value": "https://api.social-media-demo.com/v1"|"value": "'$API_URL'"|g' postman/Social-Media-API.postman_environment.json
+        
+      - name: Run Postman Collection
+        run: |
+          echo "🚀 Starting API test execution..."
+          newman run postman/Social-Media-API.postman_collection.json \
+            --environment postman/Social-Media-API.postman_environment.json \
+            --reporters cli,json,htmlextra \
+            --reporter-json-export newman-results.json \
+            --reporter-htmlextra-export newman-report.html \
+            --reporter-htmlextra-title "Social Media API Test Report" \
+            --reporter-htmlextra-showOnlyFails false \
+            --timeout-request ${{ github.event.inputs.timeout || '10000' }} \
+            --timeout 60000 \
+            --delay-request 200 \
+            --bail false \
+            --color off \
+            --verbose
+        continue-on-error: true
+        
+      - name: Parse test results
+        if: always()
+        run: |
+          if [ -f newman-results.json ]; then
+            echo "📊 Parsing test results..."
+            
+            # Extract key metrics
+            TOTAL_TESTS=$(jq '.run.stats.tests.total' newman-results.json)
+            FAILED_TESTS=$(jq '.run.stats.tests.failed' newman-results.json)
+            PASSED_TESTS=$((TOTAL_TESTS - FAILED_TESTS))
+            TOTAL_ASSERTIONS=$(jq '.run.stats.assertions.total' newman-results.json)
+            FAILED_ASSERTIONS=$(jq '.run.stats.assertions.failed' newman-results.json)
+            PASSED_ASSERTIONS=$((TOTAL_ASSERTIONS - FAILED_ASSERTIONS))
+            
+            echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
+            echo "PASSED_TESTS=$PASSED_TESTS" >> $GITHUB_ENV
+            echo "FAILED_TESTS=$FAILED_TESTS" >> $GITHUB_ENV
+            echo "TOTAL_ASSERTIONS=$TOTAL_ASSERTIONS" >> $GITHUB_ENV
+            echo "PASSED_ASSERTIONS=$PASSED_ASSERTIONS" >> $GITHUB_ENV
+            echo "FAILED_ASSERTIONS=$FAILED_ASSERTIONS" >> $GITHUB_ENV
+            
+            echo "✅ Test results parsed successfully"
+          else
+            echo "❌ Newman results file not found"
+          fi
+        
+      - name: Create test summary
+        if: always()
+        run: |
+          echo "# 🧪 API Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f newman-results.json ]; then
+            echo "| Metric | Count | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total Tests** | $TOTAL_TESTS | ℹ️ |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Passed Tests** | $PASSED_TESTS | ✅ |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Failed Tests** | $FAILED_TESTS | $(if [ $FAILED_TESTS -eq 0 ]; then echo '✅'; else echo '❌'; fi) |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total Assertions** | $TOTAL_ASSERTIONS | ℹ️ |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Passed Assertions** | $PASSED_ASSERTIONS | ✅ |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Failed Assertions** | $FAILED_ASSERTIONS | $(if [ $FAILED_ASSERTIONS -eq 0 ]; then echo '✅'; else echo '❌'; fi) |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ $FAILED_TESTS -eq 0 ] && [ $FAILED_ASSERTIONS -eq 0 ]; then
+              echo "## 🎉 All API tests passed!" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "✅ Registration API working correctly" >> $GITHUB_STEP_SUMMARY
+              echo "✅ Authentication API working correctly" >> $GITHUB_STEP_SUMMARY
+              echo "✅ Profile API working correctly" >> $GITHUB_STEP_SUMMARY
+              echo "✅ Feed API working correctly" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "## ⚠️ Some API tests failed" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Please check the detailed HTML report in the artifacts for more information." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "## ❌ Test execution failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Newman was unable to execute the collection. Check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📁 Available Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **HTML Report**: Detailed test results with request/response data" >> $GITHUB_STEP_SUMMARY
+          echo "- **JSON Results**: Machine-readable test results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔧 Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Base URL**: ${{ github.event.inputs.api_base_url || 'https://api.social-media-demo.com/v1' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Request Timeout**: ${{ github.event.inputs.timeout || '10000' }}ms" >> $GITHUB_STEP_SUMMARY
+          echo "- **Collection**: Social-Media-API.postman_collection.json" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Social-Media-API.postman_environment.json" >> $GITHUB_STEP_SUMMARY
+        
+      - name: Upload Newman results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newman-api-test-results
+          path: |
+            newman-results.json
+            newman-report.html
+          retention-days: 30
+          
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🧪 API Test Results\n\n';
+            
+            if (fs.existsSync('newman-results.json')) {
+              const results = JSON.parse(fs.readFileSync('newman-results.json', 'utf8'));
+              const totalTests = results.run.stats.tests.total;
+              const failedTests = results.run.stats.tests.failed;
+              const passedTests = totalTests - failedTests;
+              const totalAssertions = results.run.stats.assertions.total;
+              const failedAssertions = results.run.stats.assertions.failed;
+              const passedAssertions = totalAssertions - failedAssertions;
+              
+              comment += `### 📊 Summary\n\n`;
+              comment += `- **Tests**: ${passedTests}/${totalTests} passed\n`;
+              comment += `- **Assertions**: ${passedAssertions}/${totalAssertions} passed\n\n`;
+              
+              if (failedTests === 0 && failedAssertions === 0) {
+                comment += `### ✅ All API tests passed!\n\n`;
+                comment += `🎉 The API is working correctly for all endpoints:\n`;
+                comment += `- Registration\n- Authentication\n- Profile\n- Feed\n\n`;
+              } else {
+                comment += `### ⚠️ Some tests failed\n\n`;
+                comment += `Please check the detailed artifacts for more information.\n\n`;
+              }
+            } else {
+              comment += `### ❌ Test execution failed\n\n`;
+              comment += `Newman was unable to execute the collection.\n\n`;
+            }
+            
+            comment += `### 📁 Artifacts\n\n`;
+            comment += `- HTML Report: Detailed results with request/response data\n`;
+            comment += `- JSON Results: Machine-readable test results\n`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

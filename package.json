@@ -10,7 +10,13 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "install:browsers": "playwright install chromium"
+    "test:api": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli,html --reporter-html-export api-test-results.html",
+    "test:api:dev": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli --color on",
+    "test:api:ci": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli,json,htmlextra --reporter-json-export api-results.json --reporter-htmlextra-export api-report.html --color off --timeout-request 10000",
+    "test:all": "npm run test && npm run test:api",
+    "install:browsers": "playwright install chromium",
+    "install:newman": "npm install -g newman",
+    "setup": "npm install && npx playwright install"
   },
   "repository": {
     "type": "git",

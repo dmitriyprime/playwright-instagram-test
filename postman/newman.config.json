@@ -1,0 +1,23 @@
+{
+  "collection": "./postman/Social-Media-API.postman_collection.json",
+  "environment": "./postman/Social-Media-API.postman_environment.json",
+  "reporters": ["cli", "html", "json"],
+  "reporter": {
+    "html": {
+      "export": "./api-test-results.html"
+    },
+    "json": {
+      "export": "./api-test-results.json"
+    }
+  },
+  "iterationCount": 1,
+  "delayRequest": 100,
+  "timeout": 30000,
+  "timeoutRequest": 10000,
+  "bail": false,
+  "color": "auto",
+  "globals": {
+    "test_run_timestamp": "{{$timestamp}}",
+    "test_run_id": "{{$guid}}"
+  }
+}

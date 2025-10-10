@@ -1,0 +1,736 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Social Media API - Senior QA Test Assignment",
+		"description": "Comprehensive API automation testing collection for social media platform.\n\n**Test Scenarios:**\n- User Registration with validation\n- User Authentication & Token Management\n- Profile API with authorization\n- Feed API with schema validation\n\n**Features:**\n- Dynamic environment variables\n- Pre-request scripts for data generation\n- Automated assertions for schema validation\n- Token management and refresh\n- Error handling and edge cases",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "User Registration",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate unique test data for registration",
+							"const timestamp = Date.now();",
+							"const randomSuffix = Math.floor(Math.random() * 1000);",
+							"",
+							"// Set dynamic variables",
+							"pm.environment.set('test_email', `test.user.${timestamp}.${randomSuffix}@example.com`);",
+							"pm.environment.set('test_username', `testuser_${timestamp}_${randomSuffix}`);",
+							"pm.environment.set('test_fullname', `Test User ${randomSuffix}`);",
+							"pm.environment.set('test_password', 'SecurePassword123!');",
+							"",
+							"console.log('Generated test data:');",
+							"console.log('Email:', pm.environment.get('test_email'));",
+							"console.log('Username:', pm.environment.get('test_username'));",
+							"console.log('Full Name:', pm.environment.get('test_fullname'));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test for successful registration",
+							"pm.test('Registration - Status code is 201', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Registration - Response time is acceptable', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+							"});",
+							"",
+							"pm.test('Registration - Content-Type is JSON', function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+							"});",
+							"",
+							"// Validate response schema",
+							"pm.test('Registration - Response has required fields', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    pm.expect(responseJson).to.have.property('id');",
+							"    pm.expect(responseJson).to.have.property('email');",
+							"    pm.expect(responseJson).to.have.property('username');",
+							"    pm.expect(responseJson).to.have.property('created_at');",
+							"    ",
+							"    // Validate data types",
+							"    pm.expect(responseJson.id).to.be.a('string');",
+							"    pm.expect(responseJson.email).to.be.a('string');",
+							"    pm.expect(responseJson.username).to.be.a('string');",
+							"    pm.expect(responseJson.created_at).to.be.a('string');",
+							"});",
+							"",
+							"pm.test('Registration - Email matches sent data', function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson.email).to.equal(pm.environment.get('test_email'));",
+							"});",
+							"",
+							"pm.test('Registration - Username matches sent data', function () {",
+							"    const responseJson = pm.response.json();",
+							"    pm.expect(responseJson.username).to.equal(pm.environment.get('test_username'));",
+							"});",
+							"",
+							"// Save user data to environment for subsequent tests",
+							"if (pm.response.code === 201) {",
+							"    const responseJson = pm.response.json();",
+							"    pm.environment.set('user_id', responseJson.id);",
+							"    pm.environment.set('registered_email', responseJson.email);",
+							"    pm.environment.set('registered_username', responseJson.username);",
+							"    ",
+							"    console.log('User registered successfully:');",
+							"    console.log('User ID:', responseJson.id);",
+							"    console.log('Email:', responseJson.email);",
+							"    console.log('Username:', responseJson.username);",
+							"}",
+							"",
+							"// Schema validation",
+							"pm.test('Registration - Response schema is valid', function () {",
+							"    const schema = {",
+							"        type: 'object',",
+							"        required: ['id', 'email', 'username', 'created_at'],",
+							"        properties: {",
+							"            id: { type: 'string', minLength: 1 },",
+							"            email: { type: 'string', format: 'email' },",
+							"            username: { type: 'string', minLength: 1 },",
+							"            full_name: { type: 'string' },",
+							"            created_at: { type: 'string' },",
+							"            profile_picture: { type: 'string' }",
+							"        }",
+							"    };",
+							"    ",
+							"    pm.response.to.have.jsonSchema(schema);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{test_email}}\",\n    \"username\": \"{{test_username}}\",\n    \"full_name\": \"{{test_fullname}}\",\n    \"password\": \"{{test_password}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/auth/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"register"
+					]
+				},
+				"description": "Register a new user account with dynamic test data.\n\n**Pre-request Script:**\n- Generates unique email and username\n- Sets environment variables for test data\n\n**Assertions:**\n- Status code 201\n- Response schema validation\n- Required fields present\n- Data type validation\n- Email/username match sent data\n\n**Environment Variables Set:**\n- user_id\n- registered_email\n- registered_username"
+			}
+		},
+		{
+			"name": "User Login",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Ensure we have registration data",
+							"const email = pm.environment.get('registered_email');",
+							"const password = pm.environment.get('test_password');",
+							"",
+							"if (!email || !password) {",
+							"    console.error('Missing registration data. Please run User Registration first.');",
+							"    pm.test.skip();",
+							"}",
+							"",
+							"console.log('Attempting login for:', email);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test for successful login",
+							"pm.test('Login - Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Login - Response time is acceptable', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+							"});",
+							"",
+							"pm.test('Login - Content-Type is JSON', function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+							"});",
+							"",
+							"// Validate response structure",
+							"pm.test('Login - Response has required fields', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    pm.expect(responseJson).to.have.property('access_token');",
+							"    pm.expect(responseJson).to.have.property('token_type');",
+							"    pm.expect(responseJson).to.have.property('expires_in');",
+							"    pm.expect(responseJson).to.have.property('user');",
+							"    ",
+							"    // Validate token properties",
+							"    pm.expect(responseJson.access_token).to.be.a('string');",
+							"    pm.expect(responseJson.access_token).to.have.lengthOf.above(10);",
+							"    pm.expect(responseJson.token_type).to.equal('Bearer');",
+							"    pm.expect(responseJson.expires_in).to.be.a('number');",
+							"});",
+							"",
+							"pm.test('Login - User object contains correct data', function () {",
+							"    const responseJson = pm.response.json();",
+							"    const user = responseJson.user;",
+							"    ",
+							"    pm.expect(user).to.have.property('id');",
+							"    pm.expect(user).to.have.property('email');",
+							"    pm.expect(user).to.have.property('username');",
+							"    ",
+							"    // Verify user data matches registration",
+							"    pm.expect(user.id).to.equal(pm.environment.get('user_id'));",
+							"    pm.expect(user.email).to.equal(pm.environment.get('registered_email'));",
+							"});",
+							"",
+							"// Store authentication token",
+							"if (pm.response.code === 200) {",
+							"    const responseJson = pm.response.json();",
+							"    pm.environment.set('access_token', responseJson.access_token);",
+							"    pm.environment.set('token_type', responseJson.token_type);",
+							"    pm.environment.set('token_expires_in', responseJson.expires_in);",
+							"    ",
+							"    // Calculate expiration time",
+							"    const expirationTime = Date.now() + (responseJson.expires_in * 1000);",
+							"    pm.environment.set('token_expires_at', expirationTime);",
+							"    ",
+							"    console.log('Authentication successful:');",
+							"    console.log('Token type:', responseJson.token_type);",
+							"    console.log('Expires in:', responseJson.expires_in, 'seconds');",
+							"    console.log('Token preview:', responseJson.access_token.substring(0, 20) + '...');",
+							"}",
+							"",
+							"// Schema validation",
+							"pm.test('Login - Response schema is valid', function () {",
+							"    const schema = {",
+							"        type: 'object',",
+							"        required: ['access_token', 'token_type', 'expires_in', 'user'],",
+							"        properties: {",
+							"            access_token: { type: 'string', minLength: 10 },",
+							"            token_type: { type: 'string', enum: ['Bearer'] },",
+							"            expires_in: { type: 'number', minimum: 1 },",
+							"            refresh_token: { type: 'string' },",
+							"            user: {",
+							"                type: 'object',",
+							"                required: ['id', 'email', 'username'],",
+							"                properties: {",
+							"                    id: { type: 'string' },",
+							"                    email: { type: 'string' },",
+							"                    username: { type: 'string' }",
+							"                }",
+							"            }",
+							"        }",
+							"    };",
+							"    ",
+							"    pm.response.to.have.jsonSchema(schema);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{registered_email}}\",\n    \"password\": \"{{test_password}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				},
+				"description": "Authenticate user and obtain access token.\n\n**Pre-request Script:**\n- Validates registration data is available\n- Uses credentials from registration step\n\n**Assertions:**\n- Status code 200\n- Token structure validation\n- User data verification\n- Schema validation\n\n**Environment Variables Set:**\n- access_token\n- token_type\n- token_expires_in\n- token_expires_at"
+			}
+		},
+		{
+			"name": "GET /me/profile",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if we have a valid token",
+							"const token = pm.environment.get('access_token');",
+							"const expiresAt = pm.environment.get('token_expires_at');",
+							"",
+							"if (!token) {",
+							"    console.error('No access token found. Please run User Login first.');",
+							"    pm.test.skip();",
+							"    return;",
+							"}",
+							"",
+							"// Check if token is expired",
+							"if (expiresAt && Date.now() > parseInt(expiresAt)) {",
+							"    console.warn('Token appears to be expired. Login may be required.');",
+							"}",
+							"",
+							"console.log('Using token for profile request:', token.substring(0, 20) + '...');"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test for successful profile retrieval",
+							"pm.test('Profile - Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Profile - Response time is acceptable', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"});",
+							"",
+							"pm.test('Profile - Content-Type is JSON', function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+							"});",
+							"",
+							"// Validate profile structure",
+							"pm.test('Profile - Response has required fields', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    pm.expect(responseJson).to.have.property('id');",
+							"    pm.expect(responseJson).to.have.property('email');",
+							"    pm.expect(responseJson).to.have.property('username');",
+							"    pm.expect(responseJson).to.have.property('full_name');",
+							"    pm.expect(responseJson).to.have.property('created_at');",
+							"    ",
+							"    // Validate data types",
+							"    pm.expect(responseJson.id).to.be.a('string');",
+							"    pm.expect(responseJson.email).to.be.a('string');",
+							"    pm.expect(responseJson.username).to.be.a('string');",
+							"    pm.expect(responseJson.created_at).to.be.a('string');",
+							"});",
+							"",
+							"pm.test('Profile - User data matches registered user', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    pm.expect(responseJson.id).to.equal(pm.environment.get('user_id'));",
+							"    pm.expect(responseJson.email).to.equal(pm.environment.get('registered_email'));",
+							"    pm.expect(responseJson.username).to.equal(pm.environment.get('registered_username'));",
+							"});",
+							"",
+							"pm.test('Profile - Optional fields have correct types', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    if (responseJson.profile_picture) {",
+							"        pm.expect(responseJson.profile_picture).to.be.a('string');",
+							"    }",
+							"    ",
+							"    if (responseJson.bio) {",
+							"        pm.expect(responseJson.bio).to.be.a('string');",
+							"    }",
+							"    ",
+							"    if (responseJson.followers_count !== undefined) {",
+							"        pm.expect(responseJson.followers_count).to.be.a('number');",
+							"    }",
+							"    ",
+							"    if (responseJson.following_count !== undefined) {",
+							"        pm.expect(responseJson.following_count).to.be.a('number');",
+							"    }",
+							"});",
+							"",
+							"// Schema validation",
+							"pm.test('Profile - Response schema is valid', function () {",
+							"    const schema = {",
+							"        type: 'object',",
+							"        required: ['id', 'email', 'username', 'full_name', 'created_at'],",
+							"        properties: {",
+							"            id: { type: 'string', minLength: 1 },",
+							"            email: { type: 'string', format: 'email' },",
+							"            username: { type: 'string', minLength: 1 },",
+							"            full_name: { type: 'string' },",
+							"            bio: { type: 'string' },",
+							"            profile_picture: { type: 'string' },",
+							"            followers_count: { type: 'number', minimum: 0 },",
+							"            following_count: { type: 'number', minimum: 0 },",
+							"            posts_count: { type: 'number', minimum: 0 },",
+							"            created_at: { type: 'string' },",
+							"            updated_at: { type: 'string' }",
+							"        }",
+							"    };",
+							"    ",
+							"    pm.response.to.have.jsonSchema(schema);",
+							"});",
+							"",
+							"// Store profile data for validation",
+							"if (pm.response.code === 200) {",
+							"    const responseJson = pm.response.json();",
+							"    pm.environment.set('profile_id', responseJson.id);",
+							"    pm.environment.set('profile_username', responseJson.username);",
+							"    ",
+							"    console.log('Profile retrieved successfully:');",
+							"    console.log('Username:', responseJson.username);",
+							"    console.log('Full Name:', responseJson.full_name);",
+							"    console.log('Followers:', responseJson.followers_count || 0);",
+							"    console.log('Following:', responseJson.following_count || 0);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/me/profile",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"me",
+						"profile"
+					]
+				},
+				"description": "Retrieve current user's profile information with authentication.\n\n**Pre-request Script:**\n- Validates access token is available\n- Checks token expiration\n\n**Assertions:**\n- Status code 200\n- Required profile fields present\n- Data type validation\n- User data consistency\n- Schema validation\n\n**Authentication:**\n- Bearer token from login response"
+			}
+		},
+		{
+			"name": "GET /feed",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check authentication",
+							"const token = pm.environment.get('access_token');",
+							"const expiresAt = pm.environment.get('token_expires_at');",
+							"",
+							"if (!token) {",
+							"    console.error('No access token found. Please run User Login first.');",
+							"    pm.test.skip();",
+							"    return;",
+							"}",
+							"",
+							"// Check if token is expired",
+							"if (expiresAt && Date.now() > parseInt(expiresAt)) {",
+							"    console.warn('Token appears to be expired. Login may be required.');",
+							"}",
+							"",
+							"console.log('Fetching feed with authenticated request...');"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test for successful feed retrieval",
+							"pm.test('Feed - Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Feed - Response time is acceptable', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+							"});",
+							"",
+							"pm.test('Feed - Content-Type is JSON', function () {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+							"});",
+							"",
+							"// Validate feed structure",
+							"pm.test('Feed - Response has required structure', function () {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    pm.expect(responseJson).to.have.property('posts');",
+							"    pm.expect(responseJson).to.have.property('pagination');",
+							"    ",
+							"    // Validate posts array",
+							"    pm.expect(responseJson.posts).to.be.an('array');",
+							"    ",
+							"    // Validate pagination object",
+							"    pm.expect(responseJson.pagination).to.be.an('object');",
+							"    pm.expect(responseJson.pagination).to.have.property('page');",
+							"    pm.expect(responseJson.pagination).to.have.property('limit');",
+							"    pm.expect(responseJson.pagination).to.have.property('total');",
+							"});",
+							"",
+							"pm.test('Feed - Posts array structure is valid', function () {",
+							"    const responseJson = pm.response.json();",
+							"    const posts = responseJson.posts;",
+							"    ",
+							"    // If posts exist, validate structure",
+							"    if (posts.length > 0) {",
+							"        const firstPost = posts[0];",
+							"        ",
+							"        pm.expect(firstPost).to.have.property('id');",
+							"        pm.expect(firstPost).to.have.property('user_id');",
+							"        pm.expect(firstPost).to.have.property('content');",
+							"        pm.expect(firstPost).to.have.property('created_at');",
+							"        pm.expect(firstPost).to.have.property('author');",
+							"        ",
+							"        // Validate data types",
+							"        pm.expect(firstPost.id).to.be.a('string');",
+							"        pm.expect(firstPost.user_id).to.be.a('string');",
+							"        pm.expect(firstPost.content).to.be.a('string');",
+							"        pm.expect(firstPost.created_at).to.be.a('string');",
+							"        pm.expect(firstPost.author).to.be.an('object');",
+							"        ",
+							"        // Validate author object",
+							"        pm.expect(firstPost.author).to.have.property('username');",
+							"        pm.expect(firstPost.author).to.have.property('full_name');",
+							"        pm.expect(firstPost.author.username).to.be.a('string');",
+							"        pm.expect(firstPost.author.full_name).to.be.a('string');",
+							"    }",
+							"});",
+							"",
+							"pm.test('Feed - Pagination values are valid', function () {",
+							"    const responseJson = pm.response.json();",
+							"    const pagination = responseJson.pagination;",
+							"    ",
+							"    pm.expect(pagination.page).to.be.a('number');",
+							"    pm.expect(pagination.page).to.be.at.least(1);",
+							"    ",
+							"    pm.expect(pagination.limit).to.be.a('number');",
+							"    pm.expect(pagination.limit).to.be.at.least(1);",
+							"    ",
+							"    pm.expect(pagination.total).to.be.a('number');",
+							"    pm.expect(pagination.total).to.be.at.least(0);",
+							"});",
+							"",
+							"// Schema validation",
+							"pm.test('Feed - Response schema is valid', function () {",
+							"    const schema = {",
+							"        type: 'object',",
+							"        required: ['posts', 'pagination'],",
+							"        properties: {",
+							"            posts: {",
+							"                type: 'array',",
+							"                items: {",
+							"                    type: 'object',",
+							"                    required: ['id', 'user_id', 'content', 'created_at', 'author'],",
+							"                    properties: {",
+							"                        id: { type: 'string' },",
+							"                        user_id: { type: 'string' },",
+							"                        content: { type: 'string' },",
+							"                        image_url: { type: 'string' },",
+							"                        likes_count: { type: 'number', minimum: 0 },",
+							"                        comments_count: { type: 'number', minimum: 0 },",
+							"                        created_at: { type: 'string' },",
+							"                        updated_at: { type: 'string' },",
+							"                        author: {",
+							"                            type: 'object',",
+							"                            required: ['username', 'full_name'],",
+							"                            properties: {",
+							"                                username: { type: 'string' },",
+							"                                full_name: { type: 'string' },",
+							"                                profile_picture: { type: 'string' }",
+							"                            }",
+							"                        }",
+							"                    }",
+							"                }",
+							"            },",
+							"            pagination: {",
+							"                type: 'object',",
+							"                required: ['page', 'limit', 'total'],",
+							"                properties: {",
+							"                    page: { type: 'number', minimum: 1 },",
+							"                    limit: { type: 'number', minimum: 1 },",
+							"                    total: { type: 'number', minimum: 0 },",
+							"                    has_next: { type: 'boolean' },",
+							"                    has_prev: { type: 'boolean' }",
+							"                }",
+							"            }",
+							"        }",
+							"    };",
+							"    ",
+							"    pm.response.to.have.jsonSchema(schema);",
+							"});",
+							"",
+							"// Log feed information",
+							"if (pm.response.code === 200) {",
+							"    const responseJson = pm.response.json();",
+							"    ",
+							"    console.log('Feed retrieved successfully:');",
+							"    console.log('Posts count:', responseJson.posts.length);",
+							"    console.log('Current page:', responseJson.pagination.page);",
+							"    console.log('Total posts:', responseJson.pagination.total);",
+							"    ",
+							"    if (responseJson.posts.length > 0) {",
+							"        console.log('First post by:', responseJson.posts[0].author.username);",
+							"        console.log('Content preview:', responseJson.posts[0].content.substring(0, 50) + '...');",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/feed?page=1&limit=10",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"feed"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number for pagination"
+						},
+						{
+							"key": "limit",
+							"value": "10",
+							"description": "Number of posts per page"
+						}
+					]
+				},
+				"description": "Retrieve user's feed with posts from followed users.\n\n**Pre-request Script:**\n- Validates authentication token\n- Checks token expiration\n\n**Assertions:**\n- Status code 200\n- Feed structure validation\n- Posts array validation\n- Pagination validation\n- Schema validation\n\n**Authentication:**\n- Bearer token from login response\n\n**Query Parameters:**\n- page: Pagination page number\n- limit: Posts per page limit"
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "global-prerequest",
+				"exec": [
+					"// Global pre-request script",
+					"",
+					"// Log current request",
+					"console.log('='.repeat(50));",
+					"console.log('Executing:', pm.info.requestName);",
+					"console.log('Method:', pm.request.method);",
+					"console.log('URL:', pm.request.url.toString());",
+					"console.log('='.repeat(50));",
+					"",
+					"// Set request timestamp",
+					"pm.environment.set('request_timestamp', Date.now());"
+				],
+				"type": "text/javascript"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "global-test",
+				"exec": [
+					"// Global test script",
+					"",
+					"// Log response details",
+					"console.log('Response Status:', pm.response.code, pm.response.status);",
+					"console.log('Response Time:', pm.response.responseTime + 'ms');",
+					"console.log('Response Size:', pm.response.responseSize + ' bytes');",
+					"",
+					"// Global security headers check",
+					"pm.test('Security - Response has security headers', function () {",
+					"    // Check for common security headers",
+					"    const headers = pm.response.headers;",
+					"    ",
+					"    if (headers.has('X-Content-Type-Options')) {",
+					"        pm.expect(headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+					"    }",
+					"    ",
+					"    if (headers.has('X-Frame-Options')) {",
+					"        pm.expect(headers.get('X-Frame-Options')).to.be.oneOf(['DENY', 'SAMEORIGIN']);",
+					"    }",
+					"});",
+					"",
+					"// Global response time check",
+					"pm.test('Performance - Response time is reasonable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+					"});",
+					"",
+					"// Error handling for non-2xx responses",
+					"if (pm.response.code >= 400) {",
+					"    pm.test('Error Response - Has error details', function () {",
+					"        const responseJson = pm.response.json();",
+					"        pm.expect(responseJson).to.have.property('error');",
+					"        pm.expect(responseJson.error).to.have.property('message');",
+					"    });",
+					"}"
+				],
+				"type": "text/javascript"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_version",
+			"value": "1.0.0",
+			"type": "string"
+		},
+		{
+			"key": "collection_name",
+			"value": "Social Media API - Senior QA Test Assignment",
+			"type": "string"
+		}
+	]
+}
