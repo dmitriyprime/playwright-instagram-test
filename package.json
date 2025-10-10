@@ -8,8 +8,6 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:registration": "playwright test tests/instagram-registration-not-submit.spec.ts",
-    "test:auth": "playwright test tests/instagram-auth.spec.ts",
-    "test:mock": "playwright test tests/mock-social-app.spec.ts",
     "report": "playwright show-report"
   },
   "repository": {
