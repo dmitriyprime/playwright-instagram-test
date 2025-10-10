@@ -5,10 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:track-a": "playwright test --project=track-a-instagram",
+    "test:track-b": "playwright test --project=track-b-mock",
     "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:registration": "playwright test tests/instagram-registration-not-submit.spec.ts",
-    "report": "playwright show-report"
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "install:browsers": "playwright install chromium"
   },
   "repository": {
     "type": "git",
@@ -25,8 +27,5 @@
   "devDependencies": {
     "@playwright/test": "^1.56.0",
     "@types/node": "^24.7.0"
-  },
-  "dependencies": {
-    "dotenv": "^17.2.3"
   }
 }

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium]
+        project: [track-a-instagram, track-b-mock]
     
     steps:
       - name: Checkout repository
@@ -36,7 +36,7 @@ jobs:
         run: npm ci
         
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps ${{ matrix.project }}
+        run: npx playwright install --with-deps chromium
         
       - name: Run Playwright tests
         run: npx playwright test --project=${{ matrix.project }}

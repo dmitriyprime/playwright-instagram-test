@@ -1,10 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import * as dotenv from 'dotenv';
-
-/**
- * Load environment variables
- */
-dotenv.config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -54,11 +48,25 @@ export default defineConfig({
   },
   /* Configure projects for major browsers */
   projects: [
+    // Track A: Instagram Web Tests
     {
-      name: 'chromium',
+      name: 'track-a-instagram',
+      testMatch: '**/instagram-*.spec.ts',
       use: { 
         ...devices['Desktop Chrome'],
-        // Standard Chrome configuration
+        baseURL: 'https://www.instagram.com',
+        extraHTTPHeaders: {
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      },
+    },
+    // Track B: Mock Social App Tests
+    {
+      name: 'track-b-mock',
+      testMatch: '**/mock-*.spec.ts',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3001',
         extraHTTPHeaders: {
           'Accept-Language': 'en-US,en;q=0.9'
         }
