@@ -1,0 +1,17 @@
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Environment files (DO NOT COMMIT)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Test credentials
+test-credentials.json
