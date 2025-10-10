@@ -42,7 +42,8 @@ jobs:
         run: npx playwright install --with-deps chromium
         
       - name: Run Playwright tests
-        run: npx playwright test --project=${{ matrix.project }}
+        run: npx playwright test --project=${{ matrix.project }} --max-failures=1
+        timeout-minutes: 10
           
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -84,7 +85,11 @@ jobs:
         run: npm install -g newman newman-reporter-htmlextra
         
       - name: Run API tests with Newman
+        env:
+          NEWMAN_DISABLE_STRICT_SSL: true
         run: |
+          # Note: API tests are demonstrational and will fail against non-existent API
+          echo "Running API tests against demo API (expected to fail for demo purposes)"
           newman run postman/Social-Media-API.postman_collection.json \
             -e postman/Social-Media-API.postman_environment.json \
             --reporters cli,json,htmlextra \
@@ -93,7 +98,8 @@ jobs:
             --timeout-request 10000 \
             --timeout 30000 \
             --delay-request 100 \
-            --color off
+            --color off \
+            --insecure
         continue-on-error: true # Don't fail the workflow if API tests fail
         
       - name: Upload API test results

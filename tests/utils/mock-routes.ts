@@ -23,8 +23,8 @@ export async function setupMockRoutes(page: Page) {
         }
     });
 
-    // Serve demo pages
-    await page.route('http://localhost:3001/**', async (route) => {
+    // Serve demo pages for any domain (works in CI and locally)
+    await page.route('**/mock-social-app/**', async (route) => {
         const url = new URL(route.request().url());
         
         // Skip API routes
@@ -32,6 +32,15 @@ export async function setupMockRoutes(page: Page) {
             return;
         }
         
+        await route.fulfill({
+            status: 200,
+            contentType: 'text/html',
+            body: getDemoPage()
+        });
+    });
+    
+    // Also handle direct navigation to the app
+    await page.route('**/app', async (route) => {
         await route.fulfill({
             status: 200,
             contentType: 'text/html',

@@ -56,9 +56,11 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: 'https://www.instagram.com',
         extraHTTPHeaders: {
-          'Accept-Language': 'en-US,en;q=0.9'
+          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       },
+      retries: process.env.CI ? 0 : 1, // No retries in CI to avoid rate limiting
     },
     // Track B: Mock Social App Tests
     {
@@ -66,7 +68,7 @@ export default defineConfig({
       testMatch: '**/mock-*.spec.ts',
       use: { 
         ...devices['Desktop Chrome'],
-        baseURL: 'http://localhost:3001',
+        // No baseURL - mock tests will use data URIs and mock routes
         extraHTTPHeaders: {
           'Accept-Language': 'en-US,en;q=0.9'
         }

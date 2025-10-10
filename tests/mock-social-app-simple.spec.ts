@@ -18,7 +18,7 @@ test.describe('Mock Social App - Track B', {
         ]
     }, async ({ page }) => {
         await test.step('Navigate to mock app', async () => {
-            await page.goto('http://localhost:3001/demo');
+            await page.goto('https://example.com/mock-social-app/demo');
             await expect(page.locator('h1')).toContainText('Mock Social App Demo');
         });
 
@@ -47,7 +47,7 @@ test.describe('Mock Social App - Track B', {
         };
 
         await test.step('Start at demo page', async () => {
-            await page.goto('http://localhost:3001/demo');
+            await page.goto('https://example.com/mock-social-app/demo');
             await expect(page.locator('h1')).toContainText('Mock Social App Demo');
         });
 
