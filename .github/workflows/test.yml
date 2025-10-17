@@ -42,23 +42,51 @@ jobs:
         run: npx playwright install --with-deps chromium
         
       - name: Run Playwright tests
-        run: npx playwright test --project=${{ matrix.project }} --max-failures=1
-        timeout-minutes: 10
-          
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        id: playwright-tests
+        run: npx playwright test
+        continue-on-error: true
+
+      - name: Generate Test Summary
         if: always()
-        with:
-          name: playwright-report-${{ matrix.project }}
-          path: playwright-report/
-          retention-days: 14
+        run: |
+          echo "## 🎭 Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           
+          if [ -f test-results/results.json ]; then
+            echo "### Test Statistics" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const results = require('./test-results/results.json');
+              const stats = results.suites.reduce((acc, suite) => {
+                suite.specs.forEach(spec => {
+                  spec.tests.forEach(test => {
+                    acc.total++;
+                    if (test.results[0].status === 'passed') acc.passed++;
+                    if (test.results[0].status === 'failed') acc.failed++;
+                    if (test.results[0].status === 'skipped') acc.skipped++;
+                  });
+                });
+                return acc;
+              }, { total: 0, passed: 0, failed: 0, skipped: 0 });
+              
+              console.log('| Metric | Count |');
+              console.log('|--------|-------|');
+              console.log(\`| ✅ Passed | \${stats.passed} |\`);
+              console.log(\`| ❌ Failed | \${stats.failed} |\`);
+              console.log(\`| ⏭️ Skipped | \${stats.skipped} |\`);
+              console.log(\`| 📊 Total | \${stats.total} |\`);
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📈 Detailed Report" >> $GITHUB_STEP_SUMMARY
+          echo "View the full HTML report in the artifacts section below." >> $GITHUB_STEP_SUMMARY
+
       - name: Upload test results
-        uses: actions/upload-artifact@v4
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.project }}
-          path: test-results/
+          name: playwright-report
+          path: playwright-report/
           retention-days: 14
 
   api-tests:

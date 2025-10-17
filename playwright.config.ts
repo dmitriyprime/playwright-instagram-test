@@ -15,8 +15,11 @@ export default defineConfig({
   workers: process.env.CI ? 1 : 1, // Single worker to avoid rate limiting
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html'],
-    ['junit', { outputFile: 'test-results/junit.xml' }]
+    ['html'], // Built-in HTML report
+    ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['list'],
+    ['github'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
