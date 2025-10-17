@@ -16,7 +16,7 @@ env:
 
 jobs:
   playwright-tests:
-    name: Playwright UI Tests
+    name: Playwright UI Tests (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
@@ -41,52 +41,79 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         
-      - name: Run Playwright tests
+      - name: Run Playwright tests for ${{ matrix.project }}
         id: playwright-tests
-        run: npx playwright test
+        run: npx playwright test --project=${{ matrix.project }}
         continue-on-error: true
 
-      - name: Generate Test Summary
+      - name: Generate Test Summary for ${{ matrix.project }}
         if: always()
         run: |
-          echo "## 🎭 Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 Playwright Test Results - ${{ matrix.project }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -f test-results/results.json ]; then
             echo "### Test Statistics" >> $GITHUB_STEP_SUMMARY
             node -e "
+              const fs = require('fs');
+              if (!fs.existsSync('./test-results/results.json')) {
+                console.log('No results file found');
+                process.exit(0);
+              }
+              
               const results = require('./test-results/results.json');
-              const stats = results.suites.reduce((acc, suite) => {
+              const stats = { total: 0, passed: 0, failed: 0, skipped: 0, flaky: 0 };
+              
+              results.suites.forEach(suite => {
                 suite.specs.forEach(spec => {
                   spec.tests.forEach(test => {
-                    acc.total++;
-                    if (test.results[0].status === 'passed') acc.passed++;
-                    if (test.results[0].status === 'failed') acc.failed++;
-                    if (test.results[0].status === 'skipped') acc.skipped++;
+                    stats.total++;
+                    const result = test.results[0];
+                    if (result.status === 'passed') stats.passed++;
+                    else if (result.status === 'failed') stats.failed++;
+                    else if (result.status === 'skipped') stats.skipped++;
+                    else if (result.status === 'flaky') stats.flaky++;
                   });
                 });
-                return acc;
-              }, { total: 0, passed: 0, failed: 0, skipped: 0 });
+              });
               
-              console.log('| Metric | Count |');
-              console.log('|--------|-------|');
-              console.log(\`| ✅ Passed | \${stats.passed} |\`);
-              console.log(\`| ❌ Failed | \${stats.failed} |\`);
-              console.log(\`| ⏭️ Skipped | \${stats.skipped} |\`);
-              console.log(\`| 📊 Total | \${stats.total} |\`);
+              console.log('| Metric | Count | Percentage |');
+              console.log('|--------|-------|------------|');
+              console.log(\`| ✅ Passed | \${stats.passed} | \${stats.total > 0 ? ((stats.passed/stats.total)*100).toFixed(1) : 0}% |\`);
+              console.log(\`| ❌ Failed | \${stats.failed} | \${stats.total > 0 ? ((stats.failed/stats.total)*100).toFixed(1) : 0}% |\`);
+              console.log(\`| ⚠️ Flaky | \${stats.flaky} | \${stats.total > 0 ? ((stats.flaky/stats.total)*100).toFixed(1) : 0}% |\`);
+              console.log(\`| ⏭️ Skipped | \${stats.skipped} | \${stats.total > 0 ? ((stats.skipped/stats.total)*100).toFixed(1) : 0}% |\`);
+              console.log(\`| 📊 **Total** | **\${stats.total}** | **100%** |\`);
+              
+              if (stats.failed > 0) {
+                console.log('\\n### ❌ Failed Tests');
+                results.suites.forEach(suite => {
+                  suite.specs.forEach(spec => {
+                    spec.tests.forEach(test => {
+                      if (test.results[0].status === 'failed') {
+                        console.log(\`- \${test.projectName}: \${spec.title}\`);
+                      }
+                    });
+                  });
+                });
+              }
             " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No test results found for ${{ matrix.project }}" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📈 Detailed Report" >> $GITHUB_STEP_SUMMARY
           echo "View the full HTML report in the artifacts section below." >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload test results
+      - name: Upload test results for ${{ matrix.project }}
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-report-${{ matrix.project }}  # ✅ Unique name per project
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 14
 
   api-tests:
@@ -116,7 +143,6 @@ jobs:
         env:
           NEWMAN_DISABLE_STRICT_SSL: true
         run: |
-          # Note: API tests are demonstrational and will fail against non-existent API
           echo "Running API tests against demo API (expected to fail for demo purposes)"
           newman run postman/Social-Media-API.postman_collection.json \
             -e postman/Social-Media-API.postman_environment.json \
@@ -128,13 +154,13 @@ jobs:
             --delay-request 100 \
             --color off \
             --insecure
-        continue-on-error: true # Don't fail the workflow if API tests fail
+        continue-on-error: true
         
       - name: Upload API test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: api-test-results
+          name: api-test-results  # ✅ This is fine - only one API job
           path: |
             api-test-results.json
             api-test-report.html
@@ -143,16 +169,59 @@ jobs:
       - name: Display API test summary
         if: always()
         run: |
-          echo "## API Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 📡 API Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f api-test-results.json ]; then
-            echo "📊 **Test Execution Details:**" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Test Execution Details" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- Collection: Social-Media-API" >> $GITHUB_STEP_SUMMARY
-            echo "- Environment: Test Environment" >> $GITHUB_STEP_SUMMARY
-            echo "- Report: See artifacts for detailed HTML report" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const fs = require('fs');
+              if (fs.existsSync('api-test-results.json')) {
+                const results = JSON.parse(fs.readFileSync('api-test-results.json', 'utf8'));
+                const run = results.run;
+                const stats = run.stats;
+                
+                console.log('| Metric | Value |');
+                console.log('|--------|-------|');
+                console.log(\`| Total Requests | \${stats.requests.total} |\`);
+                console.log(\`| ✅ Passed | \${stats.assertions.total - stats.assertions.failed} |\`);
+                console.log(\`| ❌ Failed | \${stats.assertions.failed} |\`);
+                console.log(\`| ⏱️ Duration | \${(run.timings.completed - run.timings.started) / 1000}s |\`);
+                
+                if (stats.assertions.failed > 0) {
+                  console.log('\\n### ❌ Failed Assertions');
+                  run.executions.forEach(exec => {
+                    exec.assertions.forEach(assertion => {
+                      if (assertion.error) {
+                        console.log(\`- \${exec.item.name}: \${assertion.error.message}\`);
+                      }
+                    });
+                  });
+                }
+              }
+            " >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **API tests completed** - Check artifacts for detailed results" >> $GITHUB_STEP_SUMMARY
+            echo "📄 **Download the HTML report from artifacts for detailed results**" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **API tests failed to generate results**" >> $GITHUB_STEP_SUMMARY
           fi
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [playwright-tests, api-tests]
+    if: always()
+    
+    steps:
+      - name: Generate Overall Summary
+        run: |
+          echo "# 🎯 Complete Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Jobs Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Playwright Tests | ${{ needs.playwright-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Tests | ${{ needs.api-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **All test artifacts are available for download above**" >> $GITHUB_STEP_SUMMARY
