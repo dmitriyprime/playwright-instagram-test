@@ -31,6 +31,12 @@ npm install
 npx playwright install
 ```
 
+## 📊 Test Reports
+
+### Live Reports
+- **Allure Report**: [View Latest Report](https://dmitriyprime.github.io/playwright-instagram-test/)
+- **GitHub Actions**: [View CI/CD Results](https://github.com/dmitriyprime/playwright-instagram-test/actions)
+
 ### Running Tests
 
 **Playwright Tests:**
@@ -38,15 +44,8 @@ npx playwright install
 # Run all tests
 npm test
 
-# Run specific track
-npm run test:track-a    # Instagram tests
-npm run test:track-b    # Mock app tests
-
-# Run with UI mode
-npx playwright test --ui
-
-# Generate report
-npx playwright show-report
+# View Allure report locally
+npm run test:allure
 ```
 
 **Postman API Tests:**
