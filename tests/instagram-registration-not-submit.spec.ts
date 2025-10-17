@@ -1,15 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { InstagramRegistrationPage } from './pages/instagram-registration.page';
+import { test, expect } from './fixtures/instagram.fixture';
 import { TestDataGenerator } from './data/test-data';
 
 test.describe('Instagram Registration', () => {
-    let registrationPage: InstagramRegistrationPage;
-
-    test.beforeEach(async ({ page }) => {
-        
-        registrationPage = new InstagramRegistrationPage(page);
-        await registrationPage.navigate();
-    });
 
     test('should fill registration form and verify validations without submitting', {
         tag: ['@registration', '@ui', '@form-validation', '@smoke'],
@@ -18,46 +10,47 @@ test.describe('Instagram Registration', () => {
             { type: 'severity', description: 'high' },
             { type: 'story', description: 'User should be able to fill registration form and see validation feedback' }
         ]
-    }, async () => {
-        const testData = TestDataGenerator.generateUniqueUserData();
+    }, async ({ instagramPage, testUser }) => {
+        // Navigate to registration page (using fixture)
+        await instagramPage.navigate();
 
         await test.step('Fill registration form with valid data', async () => {
-            await registrationPage.fillEmail(testData.email);
-            await registrationPage.fillFullName(testData.fullName);
-            await registrationPage.fillUsername(testData.username);
-            await registrationPage.fillPassword(testData.password);
+            await instagramPage.fillEmail(testUser.email);
+            await instagramPage.fillFullName(testUser.fullName);
+            await instagramPage.fillUsername(testUser.username);
+            await instagramPage.fillPassword(testUser.password);
         });
 
         await test.step('Verify form fields are filled correctly', async () => {
-            await expect(registrationPage.emailInput).toHaveValue(testData.email);
-            await expect(registrationPage.fullNameInput).toHaveValue(testData.fullName);
-            await expect(registrationPage.usernameInput).toHaveValue(testData.username);
-            await expect(registrationPage.passwordInput).toHaveValue(testData.password);
+            await expect(instagramPage.emailInput).toHaveValue(testUser.email);
+            await expect(instagramPage.fullNameInput).toHaveValue(testUser.fullName);
+            await expect(instagramPage.usernameInput).toHaveValue(testUser.username);
+            await expect(instagramPage.passwordInput).toHaveValue(testUser.password);
         });
 
         await test.step('Verify sign up button is enabled', async () => {
-            await expect(registrationPage.signUpButton).toBeEnabled();
+            await expect(instagramPage.signUpButton).toBeEnabled();
         });
 
         await test.step('Test field validations with invalid data', async () => {
             const invalidEmailData = TestDataGenerator.getInvalidEmailTestData();
             const weakPasswordData = TestDataGenerator.getWeakPasswordTestData();
             
-            await registrationPage.fillEmail(invalidEmailData.email!);
-            await registrationPage.verifyEmailValidation();
+            await instagramPage.fillEmail(invalidEmailData.email!);
+            await instagramPage.verifyEmailValidation();
 
-            await registrationPage.fillPassword(weakPasswordData.password!);
-            await registrationPage.verifyPasswordValidation();
+            await instagramPage.fillPassword(weakPasswordData.password!);
+            await instagramPage.verifyPasswordValidation();
         });
 
         await test.step('Verify form can be reset/cleared', async () => {
             const emptyData = TestDataGenerator.getEmptyFormData();
             
-            await registrationPage.clearForm();
-            await expect(registrationPage.emailInput).toHaveValue(emptyData.email);
-            await expect(registrationPage.fullNameInput).toHaveValue(emptyData.fullName);
-            await expect(registrationPage.usernameInput).toHaveValue(emptyData.username);
-            await expect(registrationPage.passwordInput).toHaveValue(emptyData.password);
+            await instagramPage.clearForm();
+            await expect(instagramPage.emailInput).toHaveValue(emptyData.email);
+            await expect(instagramPage.fullNameInput).toHaveValue(emptyData.fullName);
+            await expect(instagramPage.usernameInput).toHaveValue(emptyData.username);
+            await expect(instagramPage.passwordInput).toHaveValue(emptyData.password);
         });
     });
 });
