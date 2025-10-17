@@ -1,4 +1,4 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","275","Simple mock functionality test","track-b-mock","Fri Oct 17 14:24:45 UTC 2025","passed","Fri Oct 17 14:24:45 UTC 2025","Mock Social App - Track B","mock-social-app-simple.spec.ts","",""
-"","2","should fill registration form and verify validations without submitting","track-a-instagram","Fri Oct 17 14:23:28 UTC 2025","skipped","Fri Oct 17 14:23:28 UTC 2025","Instagram Registration Form","instagram-registration-not-submit.spec.ts","",""
-"","1402","Mock workflow demonstration","track-b-mock","Fri Oct 17 14:24:45 UTC 2025","passed","Fri Oct 17 14:24:47 UTC 2025","Mock Social App - Track B","mock-social-app-simple.spec.ts","",""
+"","2","should fill registration form and verify validations without submitting","track-a-instagram","Fri Oct 17 14:30:35 UTC 2025","skipped","Fri Oct 17 14:30:35 UTC 2025","Instagram Registration Form","instagram-registration-not-submit.spec.ts","",""
+"","260","Simple mock functionality test","track-b-mock","Fri Oct 17 14:30:42 UTC 2025","passed","Fri Oct 17 14:30:42 UTC 2025","Mock Social App - Track B","mock-social-app-simple.spec.ts","",""
+"","1365","Mock workflow demonstration","track-b-mock","Fri Oct 17 14:30:43 UTC 2025","passed","Fri Oct 17 14:30:44 UTC 2025","Mock Social App - Track B","mock-social-app-simple.spec.ts","",""
