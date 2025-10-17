@@ -50,7 +50,18 @@ jobs:
         if: always()
         run: |
           echo "## 🎭 Playwright Test Results - ${{ matrix.project }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ matrix.project }}" == "track-a-instagram" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Instagram Test Status" >> $GITHUB_STEP_SUMMARY
+            echo "Instagram tests are **intentionally skipped in CI** due to:" >> $GITHUB_STEP_SUMMARY
+            echo "- Active bot detection and blocking" >> $GITHUB_STEP_SUMMARY
+            echo "- Rate limiting on CI IP addresses" >> $GITHUB_STEP_SUMMARY
+            echo "- Terms of Service considerations" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **See Track B (mock-social-app) for full test coverage demonstration**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
           
           if [ -f test-results/results.json ]; then
             echo "### Test Statistics" >> $GITHUB_STEP_SUMMARY
