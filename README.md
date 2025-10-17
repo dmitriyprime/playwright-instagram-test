@@ -7,9 +7,16 @@ A comprehensive test automation solution demonstrating professional QA practices
 This project implements a complete testing framework covering:
 
 - **Track A**: Instagram Web UI Testing (Non-invasive)
-- **Track B**: Mock Social Application Testing  
-- **API Automation**: Postman collection
-- **CI/CD Pipeline**: GitHub Actions integration
+- **Track B**: Mock Social App with complete user workflows
+- **API Testing**: Postman collection with Newman automation
+- **CI/CD**: GitHub Actions with comprehensive reporting
+
+## 📊 Live Reports
+
+- **🎭 Allure Report**: [View Latest Test Results](https://dmitriyprime.github.io/playwright-instagram-test/)
+- **🔄 GitHub Actions**: [View CI/CD Pipeline](https://github.com/dmitriyprime/playwright-instagram-test/actions)
+
+> **Note**: Allure reports are automatically generated and deployed after each test run. The report includes detailed test execution history, trends, and comprehensive test coverage analysis.
 
 ## Quick Start
 
@@ -31,13 +38,7 @@ npm install
 npx playwright install
 ```
 
-## 📊 Test Reports
-
-### Live Reports
-- **Allure Report**: [View Latest Report](https://dmitriyprime.github.io/playwright-instagram-test/)
-- **GitHub Actions**: [View CI/CD Results](https://github.com/dmitriyprime/playwright-instagram-test/actions)
-
-### Running Tests
+## Running Tests
 
 **Playwright Tests:**
 ```bash
