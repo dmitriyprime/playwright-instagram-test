@@ -10,12 +10,17 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
+    "test:allure": "allure generate allure-results --clean -o allure-report && allure open allure-report",
+    "test:allure:generate": "allure generate allure-results --clean -o allure-report",
+    "test:allure:open": "allure open allure-report",
+    "test:allure:serve": "allure serve allure-results",
     "test:api": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli,html --reporter-html-export api-test-results.html",
     "test:api:dev": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli --color on",
     "test:api:ci": "newman run postman/Social-Media-API.postman_collection.json -e postman/Social-Media-API.postman_environment.json --reporters cli,json,htmlextra --reporter-json-export api-results.json --reporter-htmlextra-export api-report.html --color off --timeout-request 10000",
     "test:all": "npm run test && npm run test:api",
     "install:browsers": "playwright install chromium",
     "install:newman": "npm install -g newman",
+    "install:allure": "npm install -g allure-commandline",
     "setup": "npm install && npx playwright install"
   },
   "repository": {
@@ -32,6 +37,7 @@
   "homepage": "https://github.com/dmitriyprime/playwright-instagram-test#readme",
   "devDependencies": {
     "@playwright/test": "^1.56.0",
-    "@types/node": "^24.7.0"
+    "@types/node": "^24.7.0",
+    "allure-playwright": "^3.4.1"
   }
 }

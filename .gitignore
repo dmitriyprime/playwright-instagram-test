@@ -6,6 +6,11 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
+# Allure
+/allure-results/
+/allure-report/
+.allure/
+
 # Environment files (DO NOT COMMIT)
 .env
 .env.local

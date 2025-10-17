@@ -20,6 +20,17 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/results.json' }],
     ['list'],
     ['github'],
+    ['allure-playwright', { 
+      outputFolder: 'allure-results',
+      detail: true,
+      suiteTitle: true,
+      environmentInfo: {
+        framework: 'Playwright',
+        browser: 'Chromium',
+        os: process.platform,
+        node_version: process.version,
+      }
+    }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
